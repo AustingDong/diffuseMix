@@ -6,7 +6,8 @@ from augment.utils import Utils
 
 
 class DiffuseMix(Dataset):
-    def __init__(self, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, model_handler):
+    def __init__(self, domain, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, model_handler):
+        self.domain = domain
         self.original_dataset = original_dataset
         self.idx_to_class = idx_to_class
         self.combine_counter = 0
@@ -21,7 +22,7 @@ class DiffuseMix(Dataset):
     def generate_augmented_images(self):
         augmented_data = []
 
-        base_directory = './result'
+        base_directory = f'./{self.domain}_augmented'
         original_resized_dir = os.path.join(base_directory, 'original_resized')
         generated_dir = os.path.join(base_directory, 'generated')
         fractal_dir = os.path.join(base_directory, 'fractal')
