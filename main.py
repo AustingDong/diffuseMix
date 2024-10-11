@@ -5,7 +5,7 @@ from torchvision import datasets
 from augment.handler import ModelHandler
 from augment.utils import Utils
 from augment.diffuseMix import DiffuseMix
-from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
+from diffusers import StableDiffusionControlNetImg2ImgPipeline, ControlNetModel, UniPCMultistepScheduler
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Generate an augmented dataset from original images and fractal patterns.")
@@ -19,12 +19,13 @@ def parse_arguments():
 def augment_domain(domain, domain_path, args, prompts):
     
     # Initialize the model handler, for pix2pix
-    model_id = "timbrooks/instruct-pix2pix"
-    model_initialization = ModelHandler(model_id=model_id, device='cuda')
+    # model_id = "timbrooks/instruct-pix2pix"
+    # model_initialization = ModelHandler(model_id=model_id, device='cuda')
 
     # Initialize the model pipeline for ControlNet
     controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16, use_safetensors=True)
-    pipe = StableDiffusionControlNetPipeline.from_pretrained(
+
+    pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
         "runwayml/stable-diffusion-v1-5", 
         controlnet=controlnet, 
         torch_dtype=torch.float16, 
@@ -55,7 +56,7 @@ def augment_domain(domain, domain_path, args, prompts):
         guidance_scale=4,
         idx_to_class = idx_to_class,
         prompts=prompts,
-        model_handler=model_initialization
+        # model_handler=model_initialization
     )
 
     # for idx, (image, label) in enumerate(augmented_train_dataset):

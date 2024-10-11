@@ -8,7 +8,9 @@ from augment.utils import Utils
 
 
 class DiffuseMix(Dataset):
-    def __init__(self, domain, pipe, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, model_handler):
+    def __init__(self, domain, pipe, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, 
+                #  model_handler
+                 ):
         self.domain = domain
         self.original_dataset = original_dataset
         self.idx_to_class = idx_to_class
@@ -16,7 +18,7 @@ class DiffuseMix(Dataset):
         self.fractal_imgs = fractal_imgs
         self.prompts = prompts
 
-        self.model_handler = model_handler # Original model handler
+        # self.model_handler = model_handler # Original model handler
         self.model_pipe = pipe # Model pipeline
 
         self.num_augmented_images_per_image = num_images
@@ -59,7 +61,7 @@ class DiffuseMix(Dataset):
             original_img.save(os.path.join(label_dirs['original_resized'], img_filename))
 
             # compute and save canny image
-            low_threshold = 100
+            low_threshold = 150
             high_threshold = 200
             original_img_arr = np.array(original_img)
             canny_img = cv2.Canny(original_img_arr, low_threshold, high_threshold)
@@ -76,7 +78,9 @@ class DiffuseMix(Dataset):
                 #                                           self.guidance_scale)\
 
                 # utilize model pipeline of ControlNet
-                augmented_images = self.model_pipe(prompt, image=canny_image).images[0]
+                augmented_images = self.model_pipe(prompt, 
+                                                   image=original_img, 
+                                                   control_image=canny_image).images
 
                 for i, img in enumerate(augmented_images):
                     img = img.resize((256, 256))
