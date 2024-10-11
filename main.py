@@ -25,7 +25,12 @@ def augment_domain(domain, domain_path, args, prompts):
     # Initialize the model pipeline for ControlNet
     controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16, use_safetensors=True)
     pipe = StableDiffusionControlNetPipeline.from_pretrained(
-        "runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=torch.float16, use_safetensors=True
+        "runwayml/stable-diffusion-v1-5", 
+        controlnet=controlnet, 
+        torch_dtype=torch.float16, 
+        use_safetensors=True,
+        safety_checker = None,
+        requires_safety_checker = False
     )
 
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
