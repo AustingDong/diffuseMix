@@ -1,4 +1,6 @@
 import os
+import cv2
+import numpy as np
 from torch.utils.data import Dataset
 from PIL import Image
 import random
@@ -6,14 +8,17 @@ from augment.utils import Utils
 
 
 class DiffuseMix(Dataset):
-    def __init__(self, domain, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, model_handler):
+    def __init__(self, domain, pipe, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, model_handler):
         self.domain = domain
         self.original_dataset = original_dataset
         self.idx_to_class = idx_to_class
         self.combine_counter = 0
         self.fractal_imgs = fractal_imgs
         self.prompts = prompts
-        self.model_handler = model_handler
+
+        self.model_handler = model_handler # Original model handler
+        self.model_pipe = pipe # Model pipeline
+
         self.num_augmented_images_per_image = num_images
         self.guidance_scale = guidance_scale
         self.utils = Utils()
@@ -45,16 +50,33 @@ class DiffuseMix(Dataset):
             img_filename = os.path.basename(img_path)
 
             label_dirs = {dtype: os.path.join(base_directory, dtype, str(label)) for dtype in
-                          ['original_resized', 'generated', 'fractal', 'concatenated', 'blended']}
+                          ['original_resized', 'canny_image', 'generated', 'fractal', 'concatenated', 'blended']}
 
             for dir_path in label_dirs.values():
                 os.makedirs(dir_path, exist_ok=True)
 
+            # Save original image
             original_img.save(os.path.join(label_dirs['original_resized'], img_filename))
 
+            # compute and save canny image
+            low_threshold = 100
+            high_threshold = 200
+            original_img_arr = np.array(original_img)
+            canny_img = cv2.Canny(original_img_arr, low_threshold, high_threshold)
+            canny_img = canny_img[:, :, None]
+            canny_img = np.concatenate([canny_img, canny_img, canny_img], axis=2)
+            canny_image = Image.fromarray(canny_img)
+
+            canny_image.save(os.path.join(label_dirs['canny_image'], img_filename))
+
+            # generate
             for prompt in self.prompts:
-                augmented_images =  self.model_handler.generate_images(prompt, img_path, self.num_augmented_images_per_image,
-                                                          self.guidance_scale)
+
+                # augmented_images =  self.model_handler.generate_images(prompt, img_path, self.num_augmented_images_per_image,
+                #                                           self.guidance_scale)\
+
+                # utilize model pipeline of ControlNet
+                augmented_images = self.model_pipe(prompt, image=canny_image).images[0]
 
                 for i, img in enumerate(augmented_images):
                     img = img.resize((256, 256))

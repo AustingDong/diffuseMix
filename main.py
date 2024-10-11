@@ -1,10 +1,11 @@
 import argparse
 import os
+import torch
 from torchvision import datasets
 from augment.handler import ModelHandler
 from augment.utils import Utils
 from augment.diffuseMix import DiffuseMix
-
+from diffusers import StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Generate an augmented dataset from original images and fractal patterns.")
@@ -17,9 +18,19 @@ def parse_arguments():
 
 def augment_domain(domain, domain_path, args, prompts):
     
-    # Initialize the model
+    # Initialize the model handler, for pix2pix
     model_id = "timbrooks/instruct-pix2pix"
     model_initialization = ModelHandler(model_id=model_id, device='cuda')
+
+    # Initialize the model pipeline for ControlNet
+    controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16, use_safetensors=True)
+    pipe = StableDiffusionControlNetPipeline.from_pretrained(
+        "runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=torch.float16, use_safetensors=True
+    )
+
+    pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
+    pipe.enable_model_cpu_offload()
+
 
     # Load the original dataset
     train_dataset = datasets.ImageFolder(root=domain_path)
@@ -28,9 +39,11 @@ def augment_domain(domain, domain_path, args, prompts):
     # Load fractal images
     fractal_imgs = Utils.load_fractal_images(args.fractal_dir)
 
+
     # Create the augmented dataset
     augmented_train_dataset = DiffuseMix(
         domain=domain,
+        pipe=pipe,
         original_dataset=train_dataset,
         fractal_imgs=fractal_imgs,
         num_images=args.num_images,
