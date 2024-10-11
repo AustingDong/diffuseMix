@@ -5,7 +5,7 @@ from torchvision import datasets
 from augment.handler import ModelHandler
 from augment.utils import Utils
 from augment.diffuseMix import DiffuseMix
-from diffusers import StableDiffusionControlNetImg2ImgPipeline, ControlNetModel, UniPCMultistepScheduler
+from diffusers import StableDiffusionControlNetImg2ImgPipeline, StableDiffusionControlNetPipeline, ControlNetModel, UniPCMultistepScheduler
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Generate an augmented dataset from original images and fractal patterns.")
@@ -23,16 +23,26 @@ def augment_domain(domain, domain_path, args, prompts):
     # model_initialization = ModelHandler(model_id=model_id, device='cuda')
 
     # Initialize the model pipeline for ControlNet
-    controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=torch.float16, use_safetensors=True)
+    controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", use_safetensors=True)
 
+    # img2img pipeline
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
-        "runwayml/stable-diffusion-v1-5", 
+        "stable-diffusion-v1-5/stable-diffusion-v1-5", 
         controlnet=controlnet, 
-        torch_dtype=torch.float16, 
+        # torch_dtype=torch.float16, 
         use_safetensors=True,
         safety_checker = None,
         requires_safety_checker = False
-    )
+    ).to("cuda")
+
+    # guess_mode
+    # pipe = StableDiffusionControlNetPipeline.from_pretrained(
+    #     "stable-diffusion-v1-5/stable-diffusion-v1-5", 
+    #     controlnet=controlnet, 
+    #     use_safetensors=True,
+    #     safety_checker = None,
+    #     requires_safety_checker = False
+    #     ).to("cuda")
 
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.enable_model_cpu_offload()

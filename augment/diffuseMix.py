@@ -18,6 +18,8 @@ class DiffuseMix(Dataset):
         self.fractal_imgs = fractal_imgs
         self.prompts = prompts
 
+        self.resize_shape = (512, 512) # shape of resized image
+
         # self.model_handler = model_handler # Original model handler
         self.model_pipe = pipe # Model pipeline
 
@@ -48,7 +50,7 @@ class DiffuseMix(Dataset):
             label = self.idx_to_class[label_idx]  # Use folder name as label
 
             original_img = Image.open(img_path).convert('RGB')
-            original_img = original_img.resize((256, 256))
+            original_img = original_img.resize(self.resize_shape)
             img_filename = os.path.basename(img_path)
 
             label_dirs = {dtype: os.path.join(base_directory, dtype, str(label)) for dtype in
@@ -61,7 +63,7 @@ class DiffuseMix(Dataset):
             original_img.save(os.path.join(label_dirs['original_resized'], img_filename))
 
             # compute and save canny image
-            low_threshold = 150
+            low_threshold = 100
             high_threshold = 200
             original_img_arr = np.array(original_img)
             canny_img = cv2.Canny(original_img_arr, low_threshold, high_threshold)
@@ -79,11 +81,14 @@ class DiffuseMix(Dataset):
 
                 # utilize model pipeline of ControlNet
                 augmented_images = self.model_pipe(prompt, 
-                                                   image=original_img, 
-                                                   control_image=canny_image).images
+                                                   image=original_img,
+                                                   control_image=canny_image
+                                                #    guess_mode=True, 
+                                                #    guidance_scale=3.0
+                                                   ).images
 
                 for i, img in enumerate(augmented_images):
-                    img = img.resize((256, 256))
+                    img = img.resize(self.resize_shape)
                     generated_img_filename = f"{img_filename}_generated_{prompt}_{i}.jpg"
                     img.save(os.path.join(label_dirs['generated'], generated_img_filename))
 
