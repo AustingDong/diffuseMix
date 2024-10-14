@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 from PIL import Image
 import random
@@ -82,6 +83,7 @@ class DiffuseMix(Dataset):
             canny_image.save(os.path.join(label_dirs['canny_image'], img_filename))
 
             # store batch information
+            
             original_img_batch.append(original_img)
             canny_img_batch.append(canny_image)
             img_filename_batch.append(img_filename)
@@ -111,30 +113,33 @@ class DiffuseMix(Dataset):
                     # utilize model pipeline of ControlNet
                     negative_prompt_batch = [self.negative_prompt for _ in range(len(original_img_batch))]
 
-                    augmented_images = self.model_pipe(prompt_batch,
-                                                        negative_prompt = negative_prompt_batch,
-                                                        image=original_img_batch,
-                                                        control_image=canny_img_batch
-                                                        #    guess_mode=True, 
-                                                        #    guidance_scale=3.0
-                                                        ).images
+                    with torch.cuda.amp.autocast():
+                        augmented_images = self.model_pipe(prompt_batch,
+                                                            negative_prompt = negative_prompt_batch,
+                                                            image=original_img_batch,
+                                                            control_image=canny_img_batch,
+                                                            num_inference_steps=25
+                                                            #    guess_mode=True, 
+                                                            #    guidance_scale=3.0
+                                                            ).images
 
+                    # concatenate, blend, and save
                     for i, img in enumerate(augmented_images):
                         img = img.resize(self.resize_shape)
-                        generated_img_filename = f"{img_filename_batch[i]}_generated_{prompt}_{i}.jpg"
+                        generated_img_filename = f"{img_filename_batch[i]}_generated_{prompt}.jpg"
                         img.save(os.path.join(label_dirs['generated'], generated_img_filename))
 
                         if not self.utils.is_black_image(img):
-                            combined_img = self.utils.combine_images(original_img, img)
-                            concatenated_img_filename = f"{img_filename_batch[i]}_concatenated_{prompt}_{i}.jpg"
+                            combined_img = self.utils.combine_images(original_img_batch[i], img)
+                            concatenated_img_filename = f"{img_filename_batch[i]}_concatenated_{prompt}.jpg"
                             combined_img.save(os.path.join(label_dirs['concatenated'], concatenated_img_filename))
 
                             random_fractal_img = random.choice(self.fractal_imgs)
-                            fractal_img_filename = f"{img_filename_batch[i]}_fractal_{prompt}_{i}.jpg"
+                            fractal_img_filename = f"{img_filename_batch[i]}_fractal_{prompt}.jpg"
                             random_fractal_img.save(os.path.join(label_dirs['fractal'], fractal_img_filename))
 
                             blended_img = self.utils.blend_images_with_resize(combined_img, random_fractal_img)
-                            blended_img_filename = f"{img_filename_batch[i]}_blended_{prompt}_{i}.jpg"
+                            blended_img_filename = f"{img_filename_batch[i]}_blended_{prompt}.jpg"
                             blended_img.save(os.path.join(label_dirs['blended'], blended_img_filename))
 
                             augmented_data.append((blended_img, label))

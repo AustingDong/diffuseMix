@@ -29,7 +29,7 @@ def augment_domain(domain, domain_path, args, prompts):
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
         "stable-diffusion-v1-5/stable-diffusion-v1-5", 
         controlnet=controlnet, 
-        # torch_dtype=torch.float16, 
+        torch_dtype=torch.float16,
         use_safetensors=True,
         safety_checker = None,
         requires_safety_checker = False
