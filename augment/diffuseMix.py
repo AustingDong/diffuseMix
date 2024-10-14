@@ -85,6 +85,7 @@ class DiffuseMix(Dataset):
             original_img_batch.append(original_img)
             canny_img_batch.append(canny_image)
             img_filename_batch.append(img_filename)
+            label_batch.append(label)
 
             # batched generate
             is_last_item = (idx == len(self.original_dataset.samples) - 1)
@@ -94,7 +95,7 @@ class DiffuseMix(Dataset):
                     # augmented_images =  self.model_handler.generate_images(prompt, img_path, self.num_augmented_images_per_image,
                     #                                           self.guidance_scale)\
 
-                    
+                    print(f"prompt: {prompt}, domain: {self.domain}")
                     if prompt == self.domain:
                         continue
                     
@@ -142,6 +143,7 @@ class DiffuseMix(Dataset):
                 original_img_batch.clear()
                 canny_img_batch.clear()
                 img_filename_batch.clear()
+                label_batch.clear()
 
         return augmented_data
 
