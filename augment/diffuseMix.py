@@ -8,7 +8,7 @@ from augment.utils import Utils
 
 
 class DiffuseMix(Dataset):
-    def __init__(self, domain, pipe, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, 
+    def __init__(self, domain, pipe, original_dataset, num_images, guidance_scale, fractal_imgs, idx_to_class, prompts, negative_prompt
                 #  model_handler
                  ):
         self.domain = domain
@@ -17,19 +17,27 @@ class DiffuseMix(Dataset):
         self.combine_counter = 0
         self.fractal_imgs = fractal_imgs
         self.prompts = prompts
+        self.negative_prompt = negative_prompt
 
         self.resize_shape = (512, 512) # shape of resized image
 
         # self.model_handler = model_handler # Original model handler
         self.model_pipe = pipe # Model pipeline
 
-        self.num_augmented_images_per_image = num_images
+        # self.num_augmented_images_per_image = num_images
+        self.batch_size=num_images
         self.guidance_scale = guidance_scale
         self.utils = Utils()
         self.augmented_images = self.generate_augmented_images()
 
+
+
     def generate_augmented_images(self):
         augmented_data = []
+        original_img_batch = []
+        canny_img_batch = []
+        img_filename_batch = []
+        label_batch = []
 
         base_directory = f'./{self.domain}_augmented'
         original_resized_dir = os.path.join(base_directory, 'original_resized')
@@ -73,39 +81,67 @@ class DiffuseMix(Dataset):
 
             canny_image.save(os.path.join(label_dirs['canny_image'], img_filename))
 
-            # generate
-            for prompt in self.prompts:
+            # store batch information
+            original_img_batch.append(original_img)
+            canny_img_batch.append(canny_image)
+            img_filename_batch.append(img_filename)
 
-                # augmented_images =  self.model_handler.generate_images(prompt, img_path, self.num_augmented_images_per_image,
-                #                                           self.guidance_scale)\
+            # batched generate
+            is_last_item = (idx == len(self.original_dataset.samples) - 1)
+            if len(original_img_batch) == self.batch_size or is_last_item:
+                for prompt in self.prompts:
 
-                # utilize model pipeline of ControlNet
-                augmented_images = self.model_pipe(prompt, 
-                                                   image=original_img,
-                                                   control_image=canny_image
-                                                #    guess_mode=True, 
-                                                #    guidance_scale=3.0
-                                                   ).images
+                    # augmented_images =  self.model_handler.generate_images(prompt, img_path, self.num_augmented_images_per_image,
+                    #                                           self.guidance_scale)\
 
-                for i, img in enumerate(augmented_images):
-                    img = img.resize(self.resize_shape)
-                    generated_img_filename = f"{img_filename}_generated_{prompt}_{i}.jpg"
-                    img.save(os.path.join(label_dirs['generated'], generated_img_filename))
+                    
+                    if prompt == self.domain:
+                        continue
+                    
+                    # decorate prompt
+                    prompt_batch = []
 
-                    if not self.utils.is_black_image(img):
-                        combined_img = self.utils.combine_images(original_img, img)
-                        concatenated_img_filename = f"{img_filename}_concatenated_{prompt}_{i}.jpg"
-                        combined_img.save(os.path.join(label_dirs['concatenated'], concatenated_img_filename))
+                    for k in range(len(original_img_batch)):
+                        prefix = "convert the image into a high quality and detailed image in"
+                        category = label_batch[k]
+                        prompt_new = f"{prefix} {prompt} style of {category}"
+                        prompt_batch.append(prompt_new)
 
-                        random_fractal_img = random.choice(self.fractal_imgs)
-                        fractal_img_filename = f"{img_filename}_fractal_{prompt}_{i}.jpg"
-                        random_fractal_img.save(os.path.join(label_dirs['fractal'], fractal_img_filename))
+                    # utilize model pipeline of ControlNet
+                    negative_prompt_batch = [self.negative_prompt for _ in range(len(original_img_batch))]
 
-                        blended_img = self.utils.blend_images_with_resize(combined_img, random_fractal_img)
-                        blended_img_filename = f"{img_filename}_blended_{prompt}_{i}.jpg"
-                        blended_img.save(os.path.join(label_dirs['blended'], blended_img_filename))
+                    augmented_images = self.model_pipe(prompt_batch,
+                                                        negative_prompt = negative_prompt_batch,
+                                                        image=original_img_batch,
+                                                        control_image=canny_img_batch
+                                                        #    guess_mode=True, 
+                                                        #    guidance_scale=3.0
+                                                        ).images
 
-                        augmented_data.append((blended_img, label))
+                    for i, img in enumerate(augmented_images):
+                        img = img.resize(self.resize_shape)
+                        generated_img_filename = f"{img_filename_batch[i]}_generated_{prompt}_{i}.jpg"
+                        img.save(os.path.join(label_dirs['generated'], generated_img_filename))
+
+                        if not self.utils.is_black_image(img):
+                            combined_img = self.utils.combine_images(original_img, img)
+                            concatenated_img_filename = f"{img_filename_batch[i]}_concatenated_{prompt}_{i}.jpg"
+                            combined_img.save(os.path.join(label_dirs['concatenated'], concatenated_img_filename))
+
+                            random_fractal_img = random.choice(self.fractal_imgs)
+                            fractal_img_filename = f"{img_filename_batch[i]}_fractal_{prompt}_{i}.jpg"
+                            random_fractal_img.save(os.path.join(label_dirs['fractal'], fractal_img_filename))
+
+                            blended_img = self.utils.blend_images_with_resize(combined_img, random_fractal_img)
+                            blended_img_filename = f"{img_filename_batch[i]}_blended_{prompt}_{i}.jpg"
+                            blended_img.save(os.path.join(label_dirs['blended'], blended_img_filename))
+
+                            augmented_data.append((blended_img, label))
+
+                # clear batch data
+                original_img_batch.clear()
+                canny_img_batch.clear()
+                img_filename_batch.clear()
 
         return augmented_data
 

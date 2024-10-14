@@ -55,7 +55,7 @@ def augment_domain(domain, domain_path, args, prompts):
     # Load fractal images
     fractal_imgs = Utils.load_fractal_images(args.fractal_dir)
 
-
+    negative_prompt = '''lowres, bad anatomy, bad hands, text,error, missing fngers,extra digt ,fewer digits,cropped, wort quality ,low quality,normal quality, jpeg artifacts,signature,watermark, username, blurry, bad feet,'''
     # Create the augmented dataset
     augmented_train_dataset = DiffuseMix(
         domain=domain,
@@ -65,7 +65,8 @@ def augment_domain(domain, domain_path, args, prompts):
         num_images=args.num_images,
         guidance_scale=4,
         idx_to_class = idx_to_class,
-        prompts=prompts,
+        prompts = prompts,
+        negative_prompt=negative_prompt
         # model_handler=model_initialization
     )
 
