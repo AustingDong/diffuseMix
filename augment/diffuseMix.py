@@ -39,6 +39,7 @@ class DiffuseMix(Dataset):
         canny_img_batch = []
         img_filename_batch = []
         label_batch = []
+        label_dirs_batch = []
 
         base_directory = f'./{self.domain}_augmented'
         original_resized_dir = os.path.join(base_directory, 'original_resized')
@@ -88,6 +89,7 @@ class DiffuseMix(Dataset):
             canny_img_batch.append(canny_image)
             img_filename_batch.append(img_filename)
             label_batch.append(label)
+            label_dirs_batch.append(label_dirs)
 
             # batched generate
             is_last_item = (idx == len(self.original_dataset.samples) - 1)
@@ -127,20 +129,20 @@ class DiffuseMix(Dataset):
                     for i, img in enumerate(augmented_images):
                         img = img.resize(self.resize_shape)
                         generated_img_filename = f"{img_filename_batch[i]}_generated_{prompt}.jpg"
-                        img.save(os.path.join(label_dirs['generated'], generated_img_filename))
+                        img.save(os.path.join(label_dirs_batch[i]['generated'], generated_img_filename))
 
                         if not self.utils.is_black_image(img):
                             combined_img = self.utils.combine_images(original_img_batch[i], img)
                             concatenated_img_filename = f"{img_filename_batch[i]}_concatenated_{prompt}.jpg"
-                            combined_img.save(os.path.join(label_dirs['concatenated'], concatenated_img_filename))
+                            combined_img.save(os.path.join(label_dirs_batch[i]['concatenated'], concatenated_img_filename))
 
                             random_fractal_img = random.choice(self.fractal_imgs)
                             fractal_img_filename = f"{img_filename_batch[i]}_fractal_{prompt}.jpg"
-                            random_fractal_img.save(os.path.join(label_dirs['fractal'], fractal_img_filename))
+                            random_fractal_img.save(os.path.join(label_dirs_batch[i]['fractal'], fractal_img_filename))
 
                             blended_img = self.utils.blend_images_with_resize(combined_img, random_fractal_img)
                             blended_img_filename = f"{img_filename_batch[i]}_blended_{prompt}.jpg"
-                            blended_img.save(os.path.join(label_dirs['blended'], blended_img_filename))
+                            blended_img.save(os.path.join(label_dirs_batch[i]['blended'], blended_img_filename))
 
                             augmented_data.append((blended_img, label))
 
@@ -149,6 +151,7 @@ class DiffuseMix(Dataset):
                 canny_img_batch.clear()
                 img_filename_batch.clear()
                 label_batch.clear()
+                label_dirs_batch.clear()
 
         return augmented_data
 
