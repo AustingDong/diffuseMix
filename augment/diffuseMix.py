@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 from PIL import Image
 import random
 from augment.utils import Utils
+from transformers import pipeline
 
 
 class DiffuseMix(Dataset):
@@ -32,11 +33,30 @@ class DiffuseMix(Dataset):
         self.augmented_images = self.generate_augmented_images()
 
 
+    def get_canny_image(self, original_img):
+        low_threshold = 100
+        high_threshold = 200
+        original_img_arr = np.array(original_img)
+        canny_img = cv2.Canny(original_img_arr, low_threshold, high_threshold)
+        canny_img = canny_img[:, :, None]
+        canny_img = np.concatenate([canny_img, canny_img, canny_img], axis=2)
+        canny_image = Image.fromarray(canny_img)
+        return canny_image
+        
 
-    def generate_augmented_images(self):
+    def get_depth_map(self, image, depth_estimator):
+        image = depth_estimator(image)["depth"]
+        image = np.array(image)
+        image = image[:, :, None]
+        image = np.concatenate([image, image, image], axis=2)
+        detected_map = torch.from_numpy(image).float() / 255.0
+        depth_map = detected_map.permute(2, 0, 1)
+        return depth_map
+
+    def generate_augmented_images(self, method="depth_map"):
         augmented_data = []
         original_img_batch = []
-        canny_img_batch = []
+        control_img_batch = []
         img_filename_batch = []
         label_batch = []
         label_dirs_batch = []
@@ -72,21 +92,18 @@ class DiffuseMix(Dataset):
             # Save original image
             original_img.save(os.path.join(label_dirs['original_resized'], img_filename))
 
-            # compute and save canny image
-            low_threshold = 100
-            high_threshold = 200
-            original_img_arr = np.array(original_img)
-            canny_img = cv2.Canny(original_img_arr, low_threshold, high_threshold)
-            canny_img = canny_img[:, :, None]
-            canny_img = np.concatenate([canny_img, canny_img, canny_img], axis=2)
-            canny_image = Image.fromarray(canny_img)
+            # compute and save control image
+            if method == "canny_image":
+                control_image = self.get_canny_image(original_img)
+            elif method == "depth_map":
+                depth_estimator = pipeline("depth-estimation")
+                control_image = self.get_depth_map(original_img, depth_estimator)
 
-            canny_image.save(os.path.join(label_dirs['canny_image'], img_filename))
-
+            control_image.save(os.path.join(label_dirs[method], img_filename))
             # store batch information
             
             original_img_batch.append(original_img)
-            canny_img_batch.append(canny_image)
+            control_img_batch.append(control_image)
             img_filename_batch.append(img_filename)
             label_batch.append(label)
             label_dirs_batch.append(label_dirs)
@@ -109,7 +126,7 @@ class DiffuseMix(Dataset):
                     for k in range(len(original_img_batch)):
                         prefix = "convert the image into a high quality and detailed image in"
                         category = label_batch[k]
-                        prompt_new = f"{prefix} {prompt} style of {category}"
+                        prompt_new = f"{prefix} {prompt} style of {category}."
                         prompt_batch.append(prompt_new)
 
                     # utilize model pipeline of ControlNet
@@ -119,7 +136,7 @@ class DiffuseMix(Dataset):
                         augmented_images = self.model_pipe(prompt_batch,
                                                             negative_prompt = negative_prompt_batch,
                                                             image=original_img_batch,
-                                                            control_image=canny_img_batch,
+                                                            control_image=control_img_batch,
                                                             num_inference_steps=25
                                                             #    guess_mode=True, 
                                                             #    guidance_scale=3.0
@@ -148,7 +165,7 @@ class DiffuseMix(Dataset):
 
                 # clear batch data
                 original_img_batch.clear()
-                canny_img_batch.clear()
+                control_img_batch.clear()
                 img_filename_batch.clear()
                 label_batch.clear()
                 label_dirs_batch.clear()

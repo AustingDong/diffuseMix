@@ -23,7 +23,8 @@ def augment_domain(domain, domain_path, args, prompts):
     # model_initialization = ModelHandler(model_id=model_id, device='cuda')
 
     # Initialize the model pipeline for ControlNet
-    controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", use_safetensors=True)
+    # controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", use_safetensors=True)
+    controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11f1p_sd15_depth", use_safetensors=True)
 
     # img2img pipeline
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
