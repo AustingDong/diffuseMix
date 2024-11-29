@@ -25,12 +25,16 @@ class DiffuseMix(Dataset):
 
         # self.model_handler = model_handler # Original model handler
         self.model_pipe = pipe # Model pipeline
+        self.depth_estimator = pipeline("depth-estimation")
+        self.depth_estimator.to('cuda')
 
         # self.num_augmented_images_per_image = num_images
         self.batch_size=num_images
         self.guidance_scale = guidance_scale
         self.utils = Utils()
         self.augmented_images = self.generate_augmented_images()
+
+        
 
 
     def get_canny_image(self, original_img):
@@ -44,8 +48,8 @@ class DiffuseMix(Dataset):
         return canny_image
         
 
-    def get_depth_map(self, image, depth_estimator):
-        image = depth_estimator(image)["depth"]
+    def get_depth_map(self, image):
+        image = self.depth_estimator(image)["depth"]
         image = np.array(image)
         image = image[:, :, None]
         image = np.concatenate([image, image, image], axis=2)
@@ -97,8 +101,7 @@ class DiffuseMix(Dataset):
             if method == "canny_image":
                 control_image = self.get_canny_image(original_img)
             elif method == "depth_map":
-                depth_estimator = pipeline("depth-estimation")
-                control_image = self.get_depth_map(original_img, depth_estimator)
+                control_image = self.get_depth_map(original_img)
 
             control_image.save(os.path.join(label_dirs[method], img_filename))
             # store batch information
