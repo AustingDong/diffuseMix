@@ -85,7 +85,7 @@ class DiffuseMix(Dataset):
             img_filename = os.path.basename(img_path)
 
             label_dirs = {dtype: os.path.join(base_directory, dtype, str(label)) for dtype in
-                          ['original_resized', 'canny_image', 'generated', 'fractal', 'concatenated', 'blended']}
+                          ['original_resized', method, 'generated', 'fractal', 'concatenated', 'blended']}
 
             for dir_path in label_dirs.values():
                 os.makedirs(dir_path, exist_ok=True)
