@@ -26,7 +26,6 @@ class DiffuseMix(Dataset):
         # self.model_handler = model_handler # Original model handler
         self.model_pipe = pipe # Model pipeline
         self.depth_estimator = pipeline("depth-estimation")
-        self.depth_estimator.to('cuda')
 
         # self.num_augmented_images_per_image = num_images
         self.batch_size=num_images
