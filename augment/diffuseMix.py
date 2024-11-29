@@ -51,7 +51,7 @@ class DiffuseMix(Dataset):
         image = np.concatenate([image, image, image], axis=2)
         detected_map = torch.from_numpy(image).float() / 255.0
         depth_map = detected_map.permute(2, 0, 1)
-        depth_map = Image.fromarray(depth_map)
+        depth_map = Image.fromarray(image)
         return depth_map
 
     def generate_augmented_images(self, method="depth_map"):
