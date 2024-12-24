@@ -107,7 +107,7 @@ class DiffuseMix(Dataset):
             
             original_img_batch.append(original_img)
             control_img_batch.append(control_image)
-            img_filename_batch.append(img_filename)
+            img_filename_batch.append(img_filename.split('.')[0])
             label_batch.append(label)
             label_dirs_batch.append(label_dirs)
 
