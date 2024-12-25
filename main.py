@@ -28,22 +28,14 @@ def augment_domain(domain, domain_path, args, prompts):
 
     # img2img pipeline
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
-        "stable-diffusion-v1-5/stable-diffusion-v1-5", 
+        # "stable-diffusion-v1-5/stable-diffusion-v1-5", 
+        "SimianLuo/LCM_Dreamshaper_v7", # utilize LCM
         controlnet=controlnet, 
         torch_dtype=torch.float16,
         use_safetensors=True,
         safety_checker = None,
         requires_safety_checker = False
     ).to("cuda")
-
-    # guess_mode
-    # pipe = StableDiffusionControlNetPipeline.from_pretrained(
-    #     "stable-diffusion-v1-5/stable-diffusion-v1-5", 
-    #     controlnet=controlnet, 
-    #     use_safetensors=True,
-    #     safety_checker = None,
-    #     requires_safety_checker = False
-    #     ).to("cuda")
 
     pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
     pipe.enable_model_cpu_offload()
@@ -68,12 +60,8 @@ def augment_domain(domain, domain_path, args, prompts):
         idx_to_class = idx_to_class,
         prompts = prompts,
         negative_prompt=negative_prompt
-        # model_handler=model_initialization
     )
 
-    # for idx, (image, label) in enumerate(augmented_train_dataset):
-    #     image.save(f'augmented_images/{idx}.png')
-    #     pass
 
 def main():
     args = parse_arguments()

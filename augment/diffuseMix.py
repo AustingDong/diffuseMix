@@ -33,7 +33,17 @@ class DiffuseMix(Dataset):
         self.utils = Utils()
         self.augmented_images = self.generate_augmented_images()
 
-        
+    
+    def expand_prompt_description(self, prompt):
+        art_method = random.choice(['Oil Painting', 'Watercolor', 'Digital Painting', 'Crayon Painting'])
+        art_details = random.choice(['Soft brushstrokes', 'intricate textures', 'subtle atmospheric perspective'])
+        prompt_description = {
+            "art_painting": f"{art_method}, {art_details}",
+            "cartoon": "thick outlines, vivid colors, simple shapes, Disney-like style, playful atmosphere, flat 2D perspective",
+            "sketch": "{pencil sketch}, {line art}, simple black-and-white sketch style, minimal shading",
+            "photo": "realistic lighting, camera-like details, natural, Detailed skin texture, neutral color grading"
+        }
+        return prompt_description[prompt]
 
 
     def get_canny_image(self, original_img):
@@ -123,13 +133,13 @@ class DiffuseMix(Dataset):
                     if prompt == self.domain:
                         continue
                     
-                    # decorate prompt
+                    # prompt engineering
                     prompt_batch = []
 
                     for k in range(len(original_img_batch)):
-                        prefix = "convert the image into a high quality and detailed image in"
+                        expanded_prompt = self.expand_prompt_description(prompt)
                         category = label_batch[k]
-                        prompt_new = f"{prefix} {prompt} style of {category}."
+                        prompt_new = f"{expanded_prompt}, {category}"
                         prompt_batch.append(prompt_new)
 
                     # utilize model pipeline of ControlNet
