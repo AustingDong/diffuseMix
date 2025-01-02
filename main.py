@@ -28,8 +28,8 @@ def augment_domain(domain, domain_path, args, prompts):
 
     # img2img pipeline
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
-        # "stable-diffusion-v1-5/stable-diffusion-v1-5", 
-        "SimianLuo/LCM_Dreamshaper_v7", # utilize LCM
+        "stable-diffusion-v1-5/stable-diffusion-v1-5", 
+        # "SimianLuo/LCM_Dreamshaper_v7", # utilize LCM
         controlnet=controlnet, 
         torch_dtype=torch.float16,
         use_safetensors=True,
