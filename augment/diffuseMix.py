@@ -39,9 +39,17 @@ class DiffuseMix(Dataset):
         art_details = random.choice(['Soft brushstrokes', 'intricate textures', 'subtle atmospheric perspective'])
         prompt_description = {
             "art_painting": f"{art_method}, {art_details}",
+            "Art": f"{art_method}, {art_details}",
+
             "cartoon": "thick outlines, vivid colors, simple shapes, Disney-like style, playful atmosphere, flat 2D perspective",
+            "Clipart": "thick outlines, vivid colors, simple shapes, Disney-like style, playful atmosphere, flat 2D perspective",
+
             "sketch": "{pencil sketch}, {line art}, simple black-and-white sketch style, minimal shading",
-            "photo": "realistic lighting, camera-like details, natural, Detailed skin texture, neutral color grading"
+
+
+            "photo": "realistic lighting, camera-like details, natural, Detailed texture, neutral color grading",
+            "Product": "blank or less background, {product-like}, realistic lighting, natural, Detailed texture, neutral color grading",
+            "RealWorld": "realistic lighting, camera-like details, natural, Detailed texture, neutral color grading",
         }
         return prompt_description[prompt]
 
