@@ -14,7 +14,7 @@ def parse_arguments():
     parser.add_argument('--prompts', type=str, required=True, help='Comma-separated list of prompts for image generation.')
     parser.add_argument('--multi_domain', type=bool, required=True, help='Specify whether the dataset has multiple domains.')
     parser.add_argument('--num_images', type=int, required=True, help="Determine the number of processing images for one time.")
-    parser.add_argument('--contronet_path', type=str, required=False, default=None)
+    parser.add_argument('--controlnet_path', type=str, required=False, default=None)
     parser.add_argument('--sd_path', type=str, required=False, default=None)
     return parser.parse_args()
 
