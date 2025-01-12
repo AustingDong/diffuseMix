@@ -14,6 +14,8 @@ def parse_arguments():
     parser.add_argument('--prompts', type=str, required=True, help='Comma-separated list of prompts for image generation.')
     parser.add_argument('--multi_domain', type=bool, required=True, help='Specify whether the dataset has multiple domains.')
     parser.add_argument('--num_images', type=int, required=True, help="Determine the number of processing images for one time.")
+    parser.add_argument('--contronet_path', type=str, required=False, default=None)
+    parser.add_argument('--sd_path', type=str, required=False, default=None)
     return parser.parse_args()
 
 def augment_domain(domain, domain_path, args, prompts):
@@ -24,11 +26,14 @@ def augment_domain(domain, domain_path, args, prompts):
 
     # Initialize the model pipeline for ControlNet
     # controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", use_safetensors=True)
-    controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11f1p_sd15_depth", use_safetensors=True)
+    if args.controlnet_path:
+        controlnet = ControlNetModel.from_pretrained(args.controlnet_path, use_safetensors=True)
+    else:
+        controlnet = ControlNetModel.from_pretrained("lllyasviel/control_v11f1p_sd15_depth", use_safetensors=True)
 
     # img2img pipeline
     pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
-        "stable-diffusion-v1-5/stable-diffusion-v1-5", 
+        args.sd_path if args.sd_path else "stable-diffusion-v1-5/stable-diffusion-v1-5", 
         # "SimianLuo/LCM_Dreamshaper_v7", # utilize LCM
         controlnet=controlnet, 
         torch_dtype=torch.float16,
