@@ -50,6 +50,11 @@ class DiffuseMix(Dataset):
             "photo": "realistic lighting, camera-like details, natural, Detailed texture, neutral color grading",
             "Product": "blank or less background, {product-like}, realistic lighting, natural, Detailed texture, neutral color grading",
             "RealWorld": "realistic lighting, camera-like details, natural, Detailed texture, neutral color grading",
+
+            "Caltech101": "camera-like details, natural, Detailed texture, {image in Caltech101 Dataset}",
+            "LabelMe": "camera-like details, natural, Detailed texture, {image in LabelMe Dataset}",
+            "SUN09": "camera-like details, natural, Detailed texture, {image in SUN09 Dataset}",
+            "VOC2007": "camera-like details, natural, Detailed texture, {image in VOC2007 Dataset}",
         }
         return prompt_description[prompt]
 
