@@ -103,10 +103,12 @@ class DiffuseMix(Dataset):
         os.makedirs(blended_dir, exist_ok=True)
 
         for idx, (img_path, label_idx) in enumerate(self.original_dataset.samples):
-
+            
             label = self.idx_to_class[label_idx]  # Use folder name as label
-
-            original_img = Image.open(img_path).convert('RGB')
+            try:
+                original_img = Image.open(img_path).convert('RGB')
+            except:
+                continue
             original_img = original_img.resize(self.resize_shape)
             img_filename = os.path.basename(img_path)
 
